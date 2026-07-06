@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: threadline_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: threadline
+      POSTGRES_PASSWORD: threadline_password
+      POSTGRES_DB: threadline_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - threadline_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  threadline_postgres_data:
