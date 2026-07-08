@@ -6,15 +6,20 @@ import (
 	"strings"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/rillyayidan/threadline/backend/internal/auth"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type Handler struct {
-	db *pgxpool.Pool
+	db        *pgxpool.Pool
+	jwtSecret string
 }
 
-func NewHandler(db *pgxpool.Pool) *Handler {
-	return &Handler{db: db}
+func NewHandler(db *pgxpool.Pool, jwtSecret string) *Handler {
+	return &Handler{
+		db:        db,
+		jwtSecret: jwtSecret,
+	}
 }
 
 type createUserRequest struct {
@@ -32,6 +37,11 @@ type userResponse struct {
 	ID    string `json:"id"`
 	Name  string `json:"name"`
 	Email string `json:"email"`
+}
+
+type loginResponse struct {
+	User  userResponse `json:"user"`
+	Token string       `json:"token"`
 }
 
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
@@ -130,6 +140,17 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	token, err := auth.GenerateToken(h.jwtSecret, user.ID, user.Email)
+	if err != nil {
+		http.Error(w, "failed to generate token", http.StatusInternalServerError)
+		return
+	}
+
+	response := loginResponse{
+		User:  user,
+		Token: token,
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(user)
+	json.NewEncoder(w).Encode(response)
 }

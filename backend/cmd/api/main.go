@@ -22,7 +22,7 @@ func main() {
 	}
 	defer db.Close()
 
-	userHandler := users.NewHandler(db)
+	userHandler := users.NewHandler(db, cfg.JWTSecret)
 
 	mux := http.NewServeMux()
 

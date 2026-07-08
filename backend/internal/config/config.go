@@ -5,6 +5,7 @@ import "os"
 type Config struct {
 	DatabaseURL string
 	APIPort     string
+	JWTSecret   string
 }
 
 func Load() Config {
@@ -18,8 +19,14 @@ func Load() Config {
 		apiPort = "8080"
 	}
 
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		jwtSecret = "dev-secret"
+	}
+
 	return Config{
 		DatabaseURL: databaseURL,
 		APIPort:     apiPort,
+		JWTSecret:   jwtSecret,
 	}
 }
