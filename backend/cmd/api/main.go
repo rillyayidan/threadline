@@ -6,9 +6,11 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/rillyayidan/threadline/backend/internal/auth"
 	"github.com/rillyayidan/threadline/backend/internal/config"
 	"github.com/rillyayidan/threadline/backend/internal/database"
 	"github.com/rillyayidan/threadline/backend/internal/users"
+	"github.com/rillyayidan/threadline/backend/internal/workspaces"
 )
 
 func main() {
@@ -23,6 +25,7 @@ func main() {
 	defer db.Close()
 
 	userHandler := users.NewHandler(db, cfg.JWTSecret)
+	workspaceHandler := workspaces.NewHandler(db)
 
 	mux := http.NewServeMux()
 
@@ -39,6 +42,11 @@ func main() {
 
 	mux.HandleFunc("/users", userHandler.Create)
 	mux.HandleFunc("/login", userHandler.Login)
+
+	mux.Handle("/workspaces", auth.Middleware(
+		cfg.JWTSecret,
+		http.HandlerFunc(workspaceHandler.Create),
+	))
 
 	addr := ":" + cfg.APIPort
 	log.Println("Threadline API running on http://localhost" + addr)
