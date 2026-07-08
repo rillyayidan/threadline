@@ -72,3 +72,52 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(workspace)
 }
+
+func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	userID, ok := auth.UserIDFromContext(r.Context())
+	if !ok {
+		http.Error(w, "missing authenticated user", http.StatusUnauthorized)
+		return
+	}
+
+	rows, err := h.db.Query(
+		r.Context(),
+		`
+		SELECT id, name, owner_id
+		FROM workspaces
+		WHERE owner_id = $1
+		ORDER BY created_at DESC
+		`,
+		userID,
+	)
+	if err != nil {
+		http.Error(w, "failed to list workspaces", http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	workspaces := []workspaceResponse{}
+
+	for rows.Next() {
+		var workspace workspaceResponse
+		if err := rows.Scan(&workspace.ID, &workspace.Name, &workspace.OwnerID); err != nil {
+			http.Error(w, "failed to read workspace", http.StatusInternalServerError)
+			return
+		}
+
+		workspaces = append(workspaces, workspace)
+	}
+
+	if err := rows.Err(); err != nil {
+		http.Error(w, "failed to read workspaces", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(workspaces)
+}

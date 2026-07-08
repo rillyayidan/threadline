@@ -45,7 +45,16 @@ func main() {
 
 	mux.Handle("/workspaces", auth.Middleware(
 		cfg.JWTSecret,
-		http.HandlerFunc(workspaceHandler.Create),
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			switch r.Method {
+			case http.MethodGet:
+				workspaceHandler.List(w, r)
+			case http.MethodPost:
+				workspaceHandler.Create(w, r)
+			default:
+				http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			}
+		}),
 	))
 
 	addr := ":" + cfg.APIPort
