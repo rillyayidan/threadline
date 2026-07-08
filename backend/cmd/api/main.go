@@ -8,6 +8,7 @@ import (
 
 	"github.com/rillyayidan/threadline/backend/internal/config"
 	"github.com/rillyayidan/threadline/backend/internal/database"
+	"github.com/rillyayidan/threadline/backend/internal/users"
 )
 
 func main() {
@@ -21,6 +22,8 @@ func main() {
 	}
 	defer db.Close()
 
+	userHandler := users.NewHandler(db)
+
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
@@ -33,6 +36,8 @@ func main() {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(response)
 	})
+
+	mux.HandleFunc("/users", userHandler.Create)
 
 	addr := ":" + cfg.APIPort
 	log.Println("Threadline API running on http://localhost" + addr)
