@@ -38,6 +38,7 @@ func main() {
 	})
 
 	mux.HandleFunc("/users", userHandler.Create)
+	mux.HandleFunc("/login", userHandler.Login)
 
 	addr := ":" + cfg.APIPort
 	log.Println("Threadline API running on http://localhost" + addr)
