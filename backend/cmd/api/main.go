@@ -10,6 +10,7 @@ import (
 	"github.com/rillyayidan/threadline/backend/internal/config"
 	"github.com/rillyayidan/threadline/backend/internal/database"
 	"github.com/rillyayidan/threadline/backend/internal/projects"
+	"github.com/rillyayidan/threadline/backend/internal/tasks"
 	"github.com/rillyayidan/threadline/backend/internal/users"
 	"github.com/rillyayidan/threadline/backend/internal/workspaces"
 )
@@ -28,6 +29,7 @@ func main() {
 	userHandler := users.NewHandler(db, cfg.JWTSecret)
 	workspaceHandler := workspaces.NewHandler(db)
 	projectHandler := projects.NewHandler(db)
+	taskHandler := tasks.NewHandler(db)
 
 	mux := http.NewServeMux()
 
@@ -67,6 +69,16 @@ func main() {
 	mux.Handle(
 		"GET /workspaces/{workspaceID}/projects",
 		auth.Middleware(cfg.JWTSecret, http.HandlerFunc(projectHandler.List)),
+	)
+
+	mux.Handle(
+		"POST /projects/{projectID}/tasks",
+		auth.Middleware(cfg.JWTSecret, http.HandlerFunc(taskHandler.Create)),
+	)
+
+	mux.Handle(
+		"GET /projects/{projectID}/tasks",
+		auth.Middleware(cfg.JWTSecret, http.HandlerFunc(taskHandler.List)),
 	)
 
 	addr := ":" + cfg.APIPort
