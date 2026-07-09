@@ -9,6 +9,7 @@ import (
 	"github.com/rillyayidan/threadline/backend/internal/auth"
 	"github.com/rillyayidan/threadline/backend/internal/config"
 	"github.com/rillyayidan/threadline/backend/internal/database"
+	"github.com/rillyayidan/threadline/backend/internal/projects"
 	"github.com/rillyayidan/threadline/backend/internal/users"
 	"github.com/rillyayidan/threadline/backend/internal/workspaces"
 )
@@ -26,6 +27,7 @@ func main() {
 
 	userHandler := users.NewHandler(db, cfg.JWTSecret)
 	workspaceHandler := workspaces.NewHandler(db)
+	projectHandler := projects.NewHandler(db)
 
 	mux := http.NewServeMux()
 
@@ -56,6 +58,16 @@ func main() {
 			}
 		}),
 	))
+
+	mux.Handle(
+		"POST /workspaces/{workspaceID}/projects",
+		auth.Middleware(cfg.JWTSecret, http.HandlerFunc(projectHandler.Create)),
+	)
+
+	mux.Handle(
+		"GET /workspaces/{workspaceID}/projects",
+		auth.Middleware(cfg.JWTSecret, http.HandlerFunc(projectHandler.List)),
+	)
 
 	addr := ":" + cfg.APIPort
 	log.Println("Threadline API running on http://localhost" + addr)
