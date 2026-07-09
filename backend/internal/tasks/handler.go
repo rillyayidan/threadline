@@ -37,6 +37,10 @@ type taskResponse struct {
 	DueDate     *string `json:"due_date"`
 }
 
+type updateTaskStatusRequest struct {
+	Status string `json:"status"`
+}
+
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	userID, ok := auth.UserIDFromContext(r.Context())
 	if !ok {
@@ -184,4 +188,76 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(tasks)
+}
+
+func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
+	userID, ok := auth.UserIDFromContext(r.Context())
+	if !ok {
+		http.Error(w, "missing authenticated user", http.StatusUnauthorized)
+		return
+	}
+
+	taskID := r.PathValue("taskID")
+
+	var req updateTaskStatusRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	req.Status = strings.ToLower(strings.TrimSpace(req.Status))
+
+	validStatuses := map[string]bool{
+		"todo":        true,
+		"in_progress": true,
+		"done":        true,
+	}
+	if !validStatuses[req.Status] {
+		http.Error(
+			w,
+			"status must be todo, in_progress, or done",
+			http.StatusBadRequest,
+		)
+		return
+	}
+
+	var task taskResponse
+	err := h.db.QueryRow(
+		r.Context(),
+		`
+		UPDATE tasks t
+		SET status = $1, updated_at = now()
+		FROM projects p, workspaces w
+		WHERE t.id = $2
+		  AND p.id = t.project_id
+		  AND w.id = p.workspace_id
+		  AND w.owner_id = $3
+		RETURNING
+			t.id, t.project_id, t.title, t.description,
+			t.status, t.priority, t.due_date::text
+		`,
+		req.Status,
+		taskID,
+		userID,
+	).Scan(
+		&task.ID,
+		&task.ProjectID,
+		&task.Title,
+		&task.Description,
+		&task.Status,
+		&task.Priority,
+		&task.DueDate,
+	)
+
+	if errors.Is(err, pgx.ErrNoRows) {
+		http.Error(w, "task not found", http.StatusNotFound)
+		return
+	}
+	if err != nil {
+		http.Error(w, "failed to update task status", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(task)
 }

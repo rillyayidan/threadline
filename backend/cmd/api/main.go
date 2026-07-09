@@ -81,6 +81,11 @@ func main() {
 		auth.Middleware(cfg.JWTSecret, http.HandlerFunc(taskHandler.List)),
 	)
 
+	mux.Handle(
+		"PATCH /tasks/{taskID}/status",
+		auth.Middleware(cfg.JWTSecret, http.HandlerFunc(taskHandler.UpdateStatus)),
+	)
+
 	addr := ":" + cfg.APIPort
 	log.Println("Threadline API running on http://localhost" + addr)
 
