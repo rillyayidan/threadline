@@ -9,6 +9,7 @@ import (
 	"github.com/rillyayidan/threadline/backend/internal/auth"
 	"github.com/rillyayidan/threadline/backend/internal/config"
 	"github.com/rillyayidan/threadline/backend/internal/database"
+	"github.com/rillyayidan/threadline/backend/internal/decisions"
 	"github.com/rillyayidan/threadline/backend/internal/projects"
 	"github.com/rillyayidan/threadline/backend/internal/tasks"
 	"github.com/rillyayidan/threadline/backend/internal/users"
@@ -30,6 +31,7 @@ func main() {
 	workspaceHandler := workspaces.NewHandler(db)
 	projectHandler := projects.NewHandler(db)
 	taskHandler := tasks.NewHandler(db)
+	decisionHandler := decisions.NewHandler(db)
 
 	mux := http.NewServeMux()
 
@@ -84,6 +86,22 @@ func main() {
 	mux.Handle(
 		"PATCH /tasks/{taskID}/status",
 		auth.Middleware(cfg.JWTSecret, http.HandlerFunc(taskHandler.UpdateStatus)),
+	)
+
+	mux.Handle(
+		"POST /projects/{projectID}/decisions",
+		auth.Middleware(
+			cfg.JWTSecret,
+			http.HandlerFunc(decisionHandler.Create),
+		),
+	)
+
+	mux.Handle(
+		"GET /projects/{projectID}/decisions",
+		auth.Middleware(
+			cfg.JWTSecret,
+			http.HandlerFunc(decisionHandler.List),
+		),
 	)
 
 	addr := ":" + cfg.APIPort
