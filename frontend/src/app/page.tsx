@@ -2,7 +2,7 @@
 
 import { FormEvent, startTransition, useEffect, useState } from "react";
 import { api, ApiError } from "@/lib/api";
-import type { LoginResponse, User } from "@/lib/types";
+import type { LoginResponse, User, Workspace } from "@/lib/types";
 
 export default function Home() {
   const [email, setEmail] = useState("");
@@ -11,6 +11,9 @@ export default function Home() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [isLoadingSession, setIsLoadingSession] = useState(true);
+  const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
+  const [isLoadingWorkspaces, setIsLoadingWorkspaces] = useState(false);
+  const [workspaceError, setWorkspaceError] = useState("");
 
   useEffect(() => {
     let restoredUser: User | null = null;
@@ -32,6 +35,60 @@ export default function Home() {
       setIsLoadingSession(false);
     });
   }, []);
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    const token = localStorage.getItem("threadline.token");
+    if (!token) {
+      return;
+    }
+
+    const authToken = token;
+
+    let isActive = true;
+
+    async function loadWorkspaces() {
+      startTransition(() => {
+        setIsLoadingWorkspaces(true);
+        setWorkspaceError("");
+      });
+
+      try {
+        const data = await api<Workspace[]>("/workspaces", { token: authToken });
+
+        if (isActive) {
+          startTransition(() => {
+            setWorkspaces(data);
+          });
+        }
+      } catch (error) {
+        if (isActive) {
+          startTransition(() => {
+            setWorkspaceError(
+              error instanceof ApiError
+                ? error.message
+                : "Gagal memuat workspace.",
+            );
+          });
+        }
+      } finally {
+        if (isActive) {
+          startTransition(() => {
+            setIsLoadingWorkspaces(false);
+          });
+        }
+      }
+    }
+
+    void loadWorkspaces();
+
+    return () => {
+      isActive = false;
+    };
+  }, [user]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -75,23 +132,88 @@ export default function Home() {
 
   if (user) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-950 px-6 text-white">
-        <section className="w-full max-w-md rounded-2xl border border-slate-700 bg-slate-900 p-8 shadow-xl">
-          <p className="text-sm font-medium text-cyan-400">THREADLINE</p>
-          <h1 className="mt-3 text-3xl font-semibold">
-            Selamat datang, {user.name}.
-          </h1>
-          <p className="mt-3 text-slate-300">
-            Sesi login tersimpan. Dashboard workspace akan kita buat pada fitur berikutnya.
-          </p>
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="mt-8 rounded-lg border border-slate-600 px-4 py-2 text-sm font-medium hover:bg-slate-800"
-          >
-            Keluar
-          </button>
-        </section>
+      <main className="min-h-screen bg-slate-950 px-6 py-8 text-white">
+        <div className="mx-auto max-w-5xl">
+          <header className="flex items-center justify-between border-b border-slate-800 pb-6">
+            <div>
+              <p className="text-sm font-semibold tracking-[0.2em] text-cyan-400">
+                THREADLINE
+              </p>
+              <h1 className="mt-2 text-2xl font-semibold">
+                Workspace Anda
+              </h1>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <span className="hidden text-sm text-slate-400 sm:block">
+                {user.name}
+              </span>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="rounded-lg border border-slate-600 px-3 py-2 text-sm font-medium hover:bg-slate-800"
+              >
+                Keluar
+              </button>
+            </div>
+          </header>
+
+          <section className="mt-10">
+            <div className="flex items-end justify-between gap-4">
+              <div>
+                <p className="text-sm font-medium text-cyan-400">
+                  PROJECT SPACES
+                </p>
+                <h2 className="mt-2 text-3xl font-semibold">
+                  Pilih tempat kerja Anda
+                </h2>
+              </div>
+              <span className="text-sm text-slate-400">
+                {workspaces.length} workspace
+              </span>
+            </div>
+
+            {isLoadingWorkspaces && (
+              <p className="mt-8 text-slate-400">Memuat workspace...</p>
+            )}
+
+            {workspaceError && (
+              <p
+                role="alert"
+                className="mt-8 rounded-lg border border-red-900 bg-red-950 px-4 py-3 text-sm text-red-200"
+              >
+                {workspaceError}
+              </p>
+            )}
+
+            {!isLoadingWorkspaces && !workspaceError && workspaces.length === 0 && (
+              <div className="mt-8 rounded-xl border border-dashed border-slate-700 bg-slate-900/50 p-8 text-slate-300">
+                Belum ada workspace. Kita tambahkan form pembuatannya pada fitur berikutnya.
+              </div>
+            )}
+
+            {!isLoadingWorkspaces && workspaces.length > 0 && (
+              <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {workspaces.map((workspace) => (
+                  <article
+                    key={workspace.id}
+                    className="rounded-xl border border-slate-700 bg-slate-900 p-5"
+                  >
+                    <p className="text-xs font-medium tracking-wider text-cyan-400">
+                      WORKSPACE
+                    </p>
+                    <h3 className="mt-3 text-lg font-semibold">
+                      {workspace.name}
+                    </h3>
+                    <p className="mt-2 text-sm text-slate-400">
+                      Project dan decision log Anda akan tampil di sini.
+                    </p>
+                  </article>
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
       </main>
     );
   }
