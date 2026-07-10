@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, startTransition, useEffect, useState } from "react";
 import { api, ApiError } from "@/lib/api";
 import type { LoginResponse, User } from "@/lib/types";
 
@@ -10,6 +10,28 @@ export default function Home() {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const [isLoadingSession, setIsLoadingSession] = useState(true);
+
+  useEffect(() => {
+    let restoredUser: User | null = null;
+
+    const token = localStorage.getItem("threadline.token");
+    const storedUser = localStorage.getItem("threadline.user");
+
+    if (token && storedUser) {
+      try {
+        restoredUser = JSON.parse(storedUser) as User;
+      } catch {
+        localStorage.removeItem("threadline.token");
+        localStorage.removeItem("threadline.user");
+      }
+    }
+
+    startTransition(() => {
+      setUser(restoredUser);
+      setIsLoadingSession(false);
+    });
+  }, []);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -41,6 +63,14 @@ export default function Home() {
     localStorage.removeItem("threadline.user");
     setUser(null);
     setPassword("");
+  }
+
+  if (isLoadingSession) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-slate-950 text-slate-300">
+        Memuat Threadline...
+      </main>
+    );
   }
 
   if (user) {
