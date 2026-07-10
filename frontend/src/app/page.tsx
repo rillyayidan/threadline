@@ -14,6 +14,8 @@ export default function Home() {
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [isLoadingWorkspaces, setIsLoadingWorkspaces] = useState(false);
   const [workspaceError, setWorkspaceError] = useState("");
+  const [workspaceName, setWorkspaceName] = useState("");
+  const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
 
   useEffect(() => {
     let restoredUser: User | null = null;
@@ -115,6 +117,39 @@ export default function Home() {
     }
   }
 
+  async function handleCreateWorkspace(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const token = localStorage.getItem("threadline.token");
+    if (!token) {
+      setWorkspaceError("Sesi tidak ditemukan. Silakan masuk kembali.");
+      return;
+    }
+
+    const authToken = token;
+    setWorkspaceError("");
+    setIsCreatingWorkspace(true);
+
+    try {
+      const workspace = await api<Workspace>("/workspaces", {
+        method: "POST",
+        token: authToken,
+        body: { name: workspaceName },
+      });
+
+      setWorkspaces((currentWorkspaces) => [workspace, ...currentWorkspaces]);
+      setWorkspaceName("");
+    } catch (error) {
+      setWorkspaceError(
+        error instanceof ApiError
+          ? error.message
+          : "Gagal membuat workspace.",
+      );
+    } finally {
+      setIsCreatingWorkspace(false);
+    }
+  }
+
   function handleLogout() {
     localStorage.removeItem("threadline.token");
     localStorage.removeItem("threadline.user");
@@ -173,6 +208,32 @@ export default function Home() {
               </span>
             </div>
 
+            <form
+              onSubmit={handleCreateWorkspace}
+              className="mt-8 flex flex-col gap-3 rounded-xl border border-slate-700 bg-slate-900 p-4 sm:flex-row"
+            >
+              <label className="sr-only" htmlFor="workspace-name">
+                Nama workspace
+              </label>
+              <input
+                id="workspace-name"
+                type="text"
+                value={workspaceName}
+                onChange={(event) => setWorkspaceName(event.target.value)}
+                required
+                maxLength={120}
+                placeholder="Contoh: Portfolio Projects"
+                className="min-w-0 flex-1 rounded-lg border border-slate-600 bg-slate-800 px-3 py-2.5 outline-none placeholder:text-slate-500 focus:border-cyan-400"
+              />
+              <button
+                type="submit"
+                disabled={isCreatingWorkspace}
+                className="rounded-lg bg-cyan-400 px-4 py-2.5 font-semibold text-slate-950 hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isCreatingWorkspace ? "Membuat..." : "Buat workspace"}
+              </button>
+            </form>
+
             {isLoadingWorkspaces && (
               <p className="mt-8 text-slate-400">Memuat workspace...</p>
             )}
@@ -188,7 +249,7 @@ export default function Home() {
 
             {!isLoadingWorkspaces && !workspaceError && workspaces.length === 0 && (
               <div className="mt-8 rounded-xl border border-dashed border-slate-700 bg-slate-900/50 p-8 text-slate-300">
-                Belum ada workspace. Kita tambahkan form pembuatannya pada fitur berikutnya.
+                Belum ada workspace. Buat workspace pertama Anda menggunakan form di atas.
               </div>
             )}
 
