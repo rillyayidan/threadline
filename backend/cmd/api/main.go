@@ -16,6 +16,21 @@ import (
 	"github.com/rillyayidan/threadline/backend/internal/workspaces"
 )
 
+func corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
+
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
 func main() {
 	ctx := context.Background()
 
@@ -107,7 +122,7 @@ func main() {
 	addr := ":" + cfg.APIPort
 	log.Println("Threadline API running on http://localhost" + addr)
 
-	err = http.ListenAndServe(addr, mux)
+	err = http.ListenAndServe(addr, corsMiddleware(mux))
 	if err != nil {
 		log.Fatal(err)
 	}
