@@ -60,7 +60,9 @@ export default function Home() {
       });
 
       try {
-        const data = await api<Workspace[]>("/workspaces", { token: authToken });
+        const data = await api<Workspace[]>("/workspaces", {
+          token: authToken,
+        });
 
         if (isActive) {
           startTransition(() => {
@@ -142,9 +144,7 @@ export default function Home() {
       setWorkspaceName("");
     } catch (error) {
       setWorkspaceError(
-        error instanceof ApiError
-          ? error.message
-          : "Gagal membuat workspace.",
+        error instanceof ApiError ? error.message : "Gagal membuat workspace.",
       );
     } finally {
       setIsCreatingWorkspace(false);
@@ -175,9 +175,7 @@ export default function Home() {
               <p className="text-sm font-semibold tracking-[0.2em] text-cyan-400">
                 THREADLINE
               </p>
-              <h1 className="mt-2 text-2xl font-semibold">
-                Workspace Anda
-              </h1>
+              <h1 className="mt-2 text-2xl font-semibold">Workspace Anda</h1>
             </div>
 
             <div className="flex items-center gap-4">
@@ -248,11 +246,14 @@ export default function Home() {
               </p>
             )}
 
-            {!isLoadingWorkspaces && !workspaceError && workspaces.length === 0 && (
-              <div className="mt-8 rounded-xl border border-dashed border-slate-700 bg-slate-900/50 p-8 text-slate-300">
-                Belum ada workspace. Buat workspace pertama Anda menggunakan form di atas.
-              </div>
-            )}
+            {!isLoadingWorkspaces &&
+              !workspaceError &&
+              workspaces.length === 0 && (
+                <div className="mt-8 rounded-xl border border-dashed border-slate-700 bg-slate-900/50 p-8 text-slate-300">
+                  Belum ada workspace. Buat workspace pertama Anda menggunakan
+                  form di atas.
+                </div>
+              )}
 
             {!isLoadingWorkspaces && workspaces.length > 0 && (
               <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -265,7 +266,9 @@ export default function Home() {
                     <p className="text-xs font-medium tracking-wider text-cyan-400">
                       WORKSPACE
                     </p>
-                    <h3 className="mt-3 text-lg font-semibold">{workspace.name}</h3>
+                    <h3 className="mt-3 text-lg font-semibold">
+                      {workspace.name}
+                    </h3>
                     <p className="mt-2 text-sm text-slate-400">
                       Lihat project dan decision log di workspace ini.
                     </p>
