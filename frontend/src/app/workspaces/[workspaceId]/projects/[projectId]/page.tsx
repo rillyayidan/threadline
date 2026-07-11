@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { FormEvent, startTransition, use, useEffect, useState } from "react";
 import { api, ApiError } from "@/lib/api";
-import type { Decision, Task } from "@/lib/types";
+import type { Decision, Task, TaskStatus } from "@/lib/types";
 
 type ProjectPageProps = {
     params: Promise<{ workspaceId: string; projectId: string }>;
@@ -25,6 +25,10 @@ export default function ProjectPage({ params }: ProjectPageProps) {
     const [decisionOutcome, setDecisionOutcome] = useState("");
     const [decisionTaskId, setDecisionTaskId] = useState("");
     const [isCreatingDecision, setIsCreatingDecision] = useState(false);
+    const [pendingTaskStatuses, setPendingTaskStatuses] = useState<
+        Record<string, TaskStatus>
+    >({});
+    const [savingTaskStatusId, setSavingTaskStatusId] = useState("");
 
     useEffect(() => {
         const token = localStorage.getItem("threadline.token");
@@ -200,6 +204,54 @@ export default function ProjectPage({ params }: ProjectPageProps) {
       }
     }
 
+    function getTaskStatusValue(task: Task) {
+      return pendingTaskStatuses[task.id] ?? task.status;
+    }
+
+    async function handleUpdateTaskStatus(task: Task) {
+      const token = localStorage.getItem("threadline.token");
+      const status = getTaskStatusValue(task);
+
+      if (!token) {
+        setError("Sesi tidak ditemukan. Silakan masuk kembali.");
+        return;
+      }
+
+      if (status === task.status) {
+        return;
+      }
+
+      setSavingTaskStatusId(task.id);
+      setError("");
+
+      try {
+        const updatedTask = await api<Task>(`/tasks/${task.id}/status`, {
+          method: "PATCH",
+          token,
+          body: { status },
+        });
+
+        setTasks((currentTasks) =>
+          currentTasks.map((currentTask) =>
+            currentTask.id === updatedTask.id ? updatedTask : currentTask,
+          ),
+        );
+
+        setPendingTaskStatuses((currentStatuses) => {
+          const nextStatuses = { ...currentStatuses };
+          delete nextStatuses[updatedTask.id];
+          return nextStatuses;
+        });
+      } catch (error) {
+        setError(
+          error instanceof ApiError
+            ? error.message
+            : "Gagal mengubah status task.",
+        );
+      } finally {
+        setSavingTaskStatusId("");
+      }
+    }
     return (
         <main className="min-h-screen bg-slate-950 px-6 py-8 text-white">
             <div className="mx-auto max-w-5xl">
@@ -303,11 +355,32 @@ export default function ProjectPage({ params }: ProjectPageProps) {
                                             key={task.id}
                                             className="rounded-xl border border-slate-700 bg-slate-900 p-4"
                                         >
-                                            <div className="flex items-start justify-between gap-3">
-                                                <h3 className="font-semibold">{task.title}</h3>
-                                                <span className="rounded-full bg-slate-800 px-2 py-1 text-xs text-cyan-300">
-                                                    {task.status.replace("_", " ")}
-                                                </span>
+                                            <div className="flex items-center gap-2">
+                                              <select
+                                                value={getTaskStatusValue(task)}
+                                                onChange={(event) =>
+                                                  setPendingTaskStatuses((currentStatuses) => ({
+                                                    ...currentStatuses,
+                                                    [task.id]: event.target.value as TaskStatus,
+                                                  }))
+                                                }
+                                                className="rounded-full border border-slate-700 bg-slate-800 px-2 py-1 text-xs text-cyan-300 outline-none focus:border-cyan-400"
+                                              >
+                                                <option value="todo">todo</option>
+                                                <option value="in_progress">in progress</option>
+                                                <option value="done">done</option>
+                                              </select>
+
+                                              <button
+                                                type="button"
+                                                onClick={() => void handleUpdateTaskStatus(task)}
+                                                disabled={
+                                                  savingTaskStatusId === task.id || getTaskStatusValue(task) === task.status
+                                                }
+                                                className="rounded-full bg-cyan-400 px-3 py-1 text-xs font-semibold text-slate-950 hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
+                                              >
+                                                {savingTaskStatusId === task.id ? "Saving..." : "Save"}
+                                              </button>
                                             </div>
                                             {task.description && (
                                                 <p className="mt-2 text-sm text-slate-400">
