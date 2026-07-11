@@ -75,14 +75,14 @@ export default function WorkspacePage({ params }: WorkspacePageProps) {
 
     const name = projectName.trim();
     if (!name) {
-        setError("Nama project wajib diisi.");
-        return;
+      setError("Nama project wajib diisi.");
+      return;
     }
 
     const token = localStorage.getItem("threadline.token");
     if (!token) {
-        setError("Sesi tidak ditemukan. Silakan masuk kembali.");
-        return;
+      setError("Sesi tidak ditemukan. Silakan masuk kembali.");
+      return;
     }
 
     const authToken = token;
@@ -90,31 +90,29 @@ export default function WorkspacePage({ params }: WorkspacePageProps) {
     setIsCreatingProject(true);
 
     try {
-        const project = await api<Project>(
+      const project = await api<Project>(
         `/workspaces/${workspaceId}/projects`,
         {
-            method: "POST",
-            token: authToken,
-            body: {
+          method: "POST",
+          token: authToken,
+          body: {
             name,
             description: projectDescription.trim(),
-            },
+          },
         },
-        );
+      );
 
-        setProjects((currentProjects) => [project, ...currentProjects]);
-        setProjectName("");
-        setProjectDescription("");
+      setProjects((currentProjects) => [project, ...currentProjects]);
+      setProjectName("");
+      setProjectDescription("");
     } catch (error) {
-        setError(
-        error instanceof ApiError
-            ? error.message
-            : "Gagal membuat project.",
-        );
+      setError(
+        error instanceof ApiError ? error.message : "Gagal membuat project.",
+      );
     } finally {
-        setIsCreatingProject(false);
+      setIsCreatingProject(false);
     }
-    }
+  }
 
   return (
     <main className="min-h-screen bg-slate-950 px-6 py-8 text-white">
@@ -137,48 +135,46 @@ export default function WorkspacePage({ params }: WorkspacePageProps) {
         </header>
 
         <form
-            onSubmit={handleCreateProject}
-            className="mt-8 rounded-xl border border-slate-700 bg-slate-900 p-5"
+          onSubmit={handleCreateProject}
+          className="mt-8 rounded-xl border border-slate-700 bg-slate-900 p-5"
         >
-            <div className="grid gap-4 sm:grid-cols-2">
-                <label className="block text-sm font-medium">
-                Nama project
-                <input
-                    type="text"
-                    value={projectName}
-                    onChange={(event) => setProjectName(event.target.value)}
-                    required
-                    maxLength={120}
-                    placeholder="Contoh: Threadline MVP"
-                    className="mt-2 w-full rounded-lg border border-slate-600 bg-slate-800 px-3 py-2.5 outline-none placeholder:text-slate-500 focus:border-cyan-400"
-                />
-                </label>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="block text-sm font-medium">
+              Nama project
+              <input
+                type="text"
+                value={projectName}
+                onChange={(event) => setProjectName(event.target.value)}
+                required
+                maxLength={120}
+                placeholder="Contoh: Threadline MVP"
+                className="mt-2 w-full rounded-lg border border-slate-600 bg-slate-800 px-3 py-2.5 outline-none placeholder:text-slate-500 focus:border-cyan-400"
+              />
+            </label>
 
-                <label className="block text-sm font-medium">
-                Deskripsi
-                <input
-                    type="text"
-                    value={projectDescription}
-                    onChange={(event) => setProjectDescription(event.target.value)}
-                    maxLength={500}
-                    placeholder="Ringkasan tujuan project"
-                    className="mt-2 w-full rounded-lg border border-slate-600 bg-slate-800 px-3 py-2.5 outline-none placeholder:text-slate-500 focus:border-cyan-400"
-                />
-                </label>
-            </div>
+            <label className="block text-sm font-medium">
+              Deskripsi
+              <input
+                type="text"
+                value={projectDescription}
+                onChange={(event) => setProjectDescription(event.target.value)}
+                maxLength={500}
+                placeholder="Ringkasan tujuan project"
+                className="mt-2 w-full rounded-lg border border-slate-600 bg-slate-800 px-3 py-2.5 outline-none placeholder:text-slate-500 focus:border-cyan-400"
+              />
+            </label>
+          </div>
 
-            <button
-                type="submit"
-                disabled={isCreatingProject}
-                className="mt-4 rounded-lg bg-cyan-400 px-4 py-2.5 font-semibold text-slate-950 hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-                {isCreatingProject ? "Membuat..." : "Buat project"}
-            </button>
+          <button
+            type="submit"
+            disabled={isCreatingProject}
+            className="mt-4 rounded-lg bg-cyan-400 px-4 py-2.5 font-semibold text-slate-950 hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isCreatingProject ? "Membuat..." : "Buat project"}
+          </button>
         </form>
 
-        {isLoading && (
-          <p className="mt-8 text-slate-400">Memuat project...</p>
-        )}
+        {isLoading && <p className="mt-8 text-slate-400">Memuat project...</p>}
 
         {error && (
           <p
@@ -198,9 +194,10 @@ export default function WorkspacePage({ params }: WorkspacePageProps) {
         {!isLoading && projects.length > 0 && (
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {projects.map((project) => (
-              <article
+              <Link
                 key={project.id}
-                className="rounded-xl border border-slate-700 bg-slate-900 p-5"
+                href={`/workspaces/${workspaceId}/projects/${project.id}`}
+                className="rounded-xl border border-slate-700 bg-slate-900 p-5 transition hover:border-cyan-400 hover:bg-slate-800"
               >
                 <p className="text-xs font-medium tracking-wider text-cyan-400">
                   PROJECT
@@ -211,7 +208,10 @@ export default function WorkspacePage({ params }: WorkspacePageProps) {
                     {project.description}
                   </p>
                 )}
-              </article>
+                <p className="mt-5 text-sm font-medium text-cyan-400">
+                  Buka project →
+                </p>
+              </Link>
             ))}
           </div>
         )}
