@@ -3,6 +3,7 @@
 import { FormEvent, startTransition, useEffect, useState } from "react";
 import { api, ApiError } from "@/lib/api";
 import type { LoginResponse, User, Workspace } from "@/lib/types";
+import Link from "next/link";
 
 export default function Home() {
   const [email, setEmail] = useState("");
@@ -256,20 +257,22 @@ export default function Home() {
             {!isLoadingWorkspaces && workspaces.length > 0 && (
               <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {workspaces.map((workspace) => (
-                  <article
+                  <Link
                     key={workspace.id}
-                    className="rounded-xl border border-slate-700 bg-slate-900 p-5"
+                    href={`/workspaces/${workspace.id}`}
+                    className="rounded-xl border border-slate-700 bg-slate-900 p-5 transition hover:border-cyan-400 hover:bg-slate-800"
                   >
                     <p className="text-xs font-medium tracking-wider text-cyan-400">
                       WORKSPACE
                     </p>
-                    <h3 className="mt-3 text-lg font-semibold">
-                      {workspace.name}
-                    </h3>
+                    <h3 className="mt-3 text-lg font-semibold">{workspace.name}</h3>
                     <p className="mt-2 text-sm text-slate-400">
-                      Project dan decision log Anda akan tampil di sini.
+                      Lihat project dan decision log di workspace ini.
                     </p>
-                  </article>
+                    <p className="mt-5 text-sm font-medium text-cyan-400">
+                      Buka workspace →
+                    </p>
+                  </Link>
                 ))}
               </div>
             )}
