@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { startTransition, use, useEffect, useState } from "react";
+import { FormEvent, startTransition, use, useEffect, useState } from "react";
 import { api, ApiError } from "@/lib/api";
 import type { Project } from "@/lib/types";
 
@@ -14,6 +14,9 @@ export default function WorkspacePage({ params }: WorkspacePageProps) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [projectName, setProjectName] = useState("");
+  const [projectDescription, setProjectDescription] = useState("");
+  const [isCreatingProject, setIsCreatingProject] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("threadline.token");
@@ -67,6 +70,52 @@ export default function WorkspacePage({ params }: WorkspacePageProps) {
     };
   }, [workspaceId]);
 
+  async function handleCreateProject(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const name = projectName.trim();
+    if (!name) {
+        setError("Nama project wajib diisi.");
+        return;
+    }
+
+    const token = localStorage.getItem("threadline.token");
+    if (!token) {
+        setError("Sesi tidak ditemukan. Silakan masuk kembali.");
+        return;
+    }
+
+    const authToken = token;
+    setError("");
+    setIsCreatingProject(true);
+
+    try {
+        const project = await api<Project>(
+        `/workspaces/${workspaceId}/projects`,
+        {
+            method: "POST",
+            token: authToken,
+            body: {
+            name,
+            description: projectDescription.trim(),
+            },
+        },
+        );
+
+        setProjects((currentProjects) => [project, ...currentProjects]);
+        setProjectName("");
+        setProjectDescription("");
+    } catch (error) {
+        setError(
+        error instanceof ApiError
+            ? error.message
+            : "Gagal membuat project.",
+        );
+    } finally {
+        setIsCreatingProject(false);
+    }
+    }
+
   return (
     <main className="min-h-screen bg-slate-950 px-6 py-8 text-white">
       <div className="mx-auto max-w-5xl">
@@ -86,6 +135,46 @@ export default function WorkspacePage({ params }: WorkspacePageProps) {
             Task dan keputusan proyek akan dikelola dari sini.
           </p>
         </header>
+
+        <form
+            onSubmit={handleCreateProject}
+            className="mt-8 rounded-xl border border-slate-700 bg-slate-900 p-5"
+        >
+            <div className="grid gap-4 sm:grid-cols-2">
+                <label className="block text-sm font-medium">
+                Nama project
+                <input
+                    type="text"
+                    value={projectName}
+                    onChange={(event) => setProjectName(event.target.value)}
+                    required
+                    maxLength={120}
+                    placeholder="Contoh: Threadline MVP"
+                    className="mt-2 w-full rounded-lg border border-slate-600 bg-slate-800 px-3 py-2.5 outline-none placeholder:text-slate-500 focus:border-cyan-400"
+                />
+                </label>
+
+                <label className="block text-sm font-medium">
+                Deskripsi
+                <input
+                    type="text"
+                    value={projectDescription}
+                    onChange={(event) => setProjectDescription(event.target.value)}
+                    maxLength={500}
+                    placeholder="Ringkasan tujuan project"
+                    className="mt-2 w-full rounded-lg border border-slate-600 bg-slate-800 px-3 py-2.5 outline-none placeholder:text-slate-500 focus:border-cyan-400"
+                />
+                </label>
+            </div>
+
+            <button
+                type="submit"
+                disabled={isCreatingProject}
+                className="mt-4 rounded-lg bg-cyan-400 px-4 py-2.5 font-semibold text-slate-950 hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+                {isCreatingProject ? "Membuat..." : "Buat project"}
+            </button>
+        </form>
 
         {isLoading && (
           <p className="mt-8 text-slate-400">Memuat project...</p>
