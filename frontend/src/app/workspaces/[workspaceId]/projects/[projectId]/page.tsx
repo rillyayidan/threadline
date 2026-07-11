@@ -20,6 +20,11 @@ export default function ProjectPage({ params }: ProjectPageProps) {
     const [taskPriority, setTaskPriority] = useState<Task["priority"]>("medium");
     const [taskDueDate, setTaskDueDate] = useState("");
     const [isCreatingTask, setIsCreatingTask] = useState(false);
+    const [decisionTitle, setDecisionTitle] = useState("");
+    const [decisionContext, setDecisionContext] = useState("");
+    const [decisionOutcome, setDecisionOutcome] = useState("");
+    const [decisionTaskId, setDecisionTaskId] = useState("");
+    const [isCreatingDecision, setIsCreatingDecision] = useState(false);
 
     useEffect(() => {
         const token = localStorage.getItem("threadline.token");
@@ -129,6 +134,70 @@ export default function ProjectPage({ params }: ProjectPageProps) {
         } finally {
             setIsCreatingTask(false);
         }
+    }
+
+    async function handleCreateDecision(event: FormEvent<HTMLFormElement>) {
+      event.preventDefault();
+
+      const token = localStorage.getItem("threadline.token");
+      const title = decisionTitle.trim();
+      const outcome = decisionOutcome.trim();
+
+      if (!token) {
+        setError("Sesi tidak ditemukan. Silakan masuk kembali.");
+        return;
+      }
+
+      if (!title || !outcome) {
+        setError("Judul dan outcome keputusan wajib diisi.");
+        return;
+      }
+
+      setIsCreatingDecision(true);
+      setError("");
+
+      try {
+        const body: {
+          title: string;
+          context: string;
+          outcome: string;
+          task_id?: string;
+        } = {
+          title,
+          context: decisionContext.trim(),
+          outcome,
+        };
+
+        if (decisionTaskId) {
+          body.task_id = decisionTaskId;
+        }
+
+        const createdDecision = await api<Decision>(
+          `/projects/${projectId}/decisions`,
+          {
+            method: "POST",
+            token,
+            body,
+          },
+        );
+
+        setDecisions((currentDecisions) => [
+          createdDecision,
+          ...currentDecisions,
+        ]);
+        setDecisionTitle("");
+        setDecisionContext("");
+        setDecisionOutcome("");
+        setDecisionTaskId("");
+      } catch (error) {
+        setError(
+          error instanceof ApiError
+            ? error.message
+            : "Gagal mencatat keputusan.",
+        );
+      } finally {
+        setIsCreatingDecision(false);
+      }
     }
 
     return (
@@ -258,6 +327,57 @@ export default function ProjectPage({ params }: ProjectPageProps) {
                                     {decisions.length}
                                 </span>
                             </div>
+
+                            <form
+                              onSubmit={handleCreateDecision}
+                              className="mt-4 rounded-xl border border-slate-800 bg-slate-900 p-4"
+                            >
+                              <div className="space-y-3">
+                                <input
+                                  value={decisionTitle}
+                                  onChange={(event) => setDecisionTitle(event.target.value)}
+                                  placeholder="Decision title"
+                                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-cyan-400"
+                                />
+
+                                <textarea
+                                  value={decisionContext}
+                                  onChange={(event) => setDecisionContext(event.target.value)}
+                                  placeholder="Context"
+                                  rows={3}
+                                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-cyan-400"
+                                />
+
+                                <textarea
+                                  value={decisionOutcome}
+                                  onChange={(event) => setDecisionOutcome(event.target.value)}
+                                  placeholder="Outcome"
+                                  rows={3}
+                                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-cyan-400"
+                                />
+
+                                <select
+                                  value={decisionTaskId}
+                                  onChange={(event) => setDecisionTaskId(event.target.value)}
+                                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-cyan-400"
+                                >
+                                  <option value="">Project decision</option>
+                                  {tasks.map((task) => (
+                                    <option key={task.id} value={task.id}>
+                                      Task: {task.title}
+                                    </option>
+                                  ))}
+                                </select>
+
+                                <button
+                                  type="submit"
+                                  disabled={isCreatingDecision}
+                                  className="rounded-lg bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                  {isCreatingDecision ? "Saving..." : "Save decision"}
+                                </button>
+                              </div>
+                            </form>
 
                             {decisions.length === 0 ? (
                                 <div className="mt-4 rounded-xl border border-dashed border-slate-700 bg-slate-900/50 p-5 text-sm text-slate-300">
