@@ -219,7 +219,7 @@ export default function ProjectPage({ params }: ProjectPageProps) {
       return tasks.find((task) => task.id === taskId)?.title ?? "";
     }
 
-    function formatDecisionTime(value?: string) {
+    function formatTimestamp(value?: string) {
       if (!value) {
         return "Waktu belum tersedia";
       }
@@ -423,12 +423,15 @@ export default function ProjectPage({ params }: ProjectPageProps) {
                                               <span className="rounded-full bg-slate-800 px-2 py-1 text-slate-300">
                                                 Priority: {task.priority}
                                               </span>
-
+                                              <span className="rounded-full bg-slate-800 px-2 py-1 text-slate-300">
+                                                Created: {formatTimestamp(task.created_at)}
+                                              </span>
                                               {task.due_date && (
                                                 <span className="rounded-full bg-slate-800 px-2 py-1 text-slate-300">
                                                   Due: {task.due_date}
                                                 </span>
                                               )}
+
                                             </div>
                                         </article>
                                     ))}
@@ -510,7 +513,7 @@ export default function ProjectPage({ params }: ProjectPageProps) {
                                                 {decision.task_id ? "TASK DECISION" : "PROJECT DECISION"}
                                             </p>
                                             <p className="mt-1 text-xs text-slate-500">
-                                              {formatDecisionTime(decision.created_at)}
+                                              {formatTimestamp(decision.created_at)}
                                             </p>
                                             {decision.task_id && getTaskTitle(decision.task_id) && (
                                                 <p className="mt-2 text-xs text-slate-400">

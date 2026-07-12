@@ -35,6 +35,7 @@ type taskResponse struct {
 	Status      string  `json:"status"`
 	Priority    string  `json:"priority"`
 	DueDate     *string `json:"due_date"`
+	CreatedAt   string  `json:"created_at"`
 }
 
 type updateTaskStatusRequest struct {
@@ -99,7 +100,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		WHERE p.id = $5 AND w.owner_id = $6
 		RETURNING
 			id, project_id, title, description,
-			status, priority, due_date::text
+			status, priority, due_date::text, created_at::text
 		`,
 		req.Title,
 		req.Description,
@@ -115,6 +116,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		&task.Status,
 		&task.Priority,
 		&task.DueDate,
+		&task.CreatedAt,
 	)
 
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -145,7 +147,7 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 		`
 		SELECT
 			t.id, t.project_id, t.title, t.description,
-			t.status, t.priority, t.due_date::text
+			t.status, t.priority, t.due_date::text, t.created_at::text
 		FROM tasks t
 		JOIN projects p ON p.id = t.project_id
 		JOIN workspaces w ON w.id = p.workspace_id
@@ -173,6 +175,7 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 			&task.Status,
 			&task.Priority,
 			&task.DueDate,
+			&task.CreatedAt,
 		); err != nil {
 			http.Error(w, "failed to read task", http.StatusInternalServerError)
 			return
@@ -229,12 +232,12 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 		SET status = $1, updated_at = now()
 		FROM projects p, workspaces w
 		WHERE t.id = $2
-		  AND p.id = t.project_id
-		  AND w.id = p.workspace_id
-		  AND w.owner_id = $3
+		AND p.id = t.project_id
+		AND w.id = p.workspace_id
+		AND w.owner_id = $3
 		RETURNING
 			t.id, t.project_id, t.title, t.description,
-			t.status, t.priority, t.due_date::text
+			t.status, t.priority, t.due_date::text, t.created_at::text
 		`,
 		req.Status,
 		taskID,
@@ -247,6 +250,7 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 		&task.Status,
 		&task.Priority,
 		&task.DueDate,
+		&task.CreatedAt,
 	)
 
 	if errors.Is(err, pgx.ErrNoRows) {

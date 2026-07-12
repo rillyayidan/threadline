@@ -33,6 +33,7 @@ export type Task = {
   status: TaskStatus;
   priority: TaskPriority;
   due_date: string | null;
+  created_at: string;
 };
 
 export type Decision = {
