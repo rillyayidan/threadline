@@ -34,6 +34,7 @@ export default function ProjectPage({ params }: ProjectPageProps) {
     const [savingTaskStatusId, setSavingTaskStatusId] = useState("");
     const [taskStatusFilter, setTaskStatusFilter] =
         useState<TaskStatusFilter>("all");
+    const [taskSearchQuery, setTaskSearchQuery] = useState("");
     const [decisionScopeFilter, setDecisionScopeFilter] =
         useState<DecisionScopeFilter>("all");
     const [project, setProject] = useState<Project | null>(null);
@@ -45,6 +46,18 @@ export default function ProjectPage({ params }: ProjectPageProps) {
         taskStatusFilter === "all"
             ? tasks
             : tasks.filter((task) => task.status === taskStatusFilter);
+    const visibleTasks = filteredTasks.filter((task) => {
+        const query = taskSearchQuery.trim().toLowerCase();
+
+        if (!query) {
+            return true;
+        }
+
+        return (
+            task.title.toLowerCase().includes(query) ||
+            task.description.toLowerCase().includes(query)
+        );
+    });
     const filteredDecisions =
         decisionScopeFilter === "all"
             ? decisions
@@ -401,7 +414,7 @@ export default function ProjectPage({ params }: ProjectPageProps) {
                                 <div>
                                     <h2 className="text-xl font-semibold">Tasks</h2>
                                     <p className="text-sm text-slate-400">
-                                        {filteredTasks.length} shown / {tasks.length} total
+                                        {visibleTasks.length} shown / {tasks.length} total
                                     </p>
                                 </div>
 
@@ -480,17 +493,25 @@ export default function ProjectPage({ params }: ProjectPageProps) {
                                 </div>
                             </form>
 
+                            <input
+                                type="search"
+                                value={taskSearchQuery}
+                                onChange={(event) => setTaskSearchQuery(event.target.value)}
+                                placeholder="Search tasks"
+                                className="mt-4 w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none placeholder:text-slate-500 focus:border-cyan-400"
+                            />
+
                             {tasks.length === 0 ? (
                                 <div className="mt-4 rounded-xl border border-dashed border-slate-700 bg-slate-900/50 p-5 text-sm text-slate-300">
                                     Belum ada task.
                                 </div>
-                            ) : filteredTasks.length === 0 ? (
+                            ) : visibleTasks.length === 0 ? (
                                 <div className="mt-4 rounded-xl border border-dashed border-slate-700 bg-slate-900/50 p-5 text-sm text-slate-300">
-                                    Tidak ada task untuk filter ini.
+                                    Tidak ada task yang cocok.
                                 </div>
                             ) : (
                                 <div className="mt-4 space-y-3">
-                                    {filteredTasks.map((task) => (
+                                    {visibleTasks.map((task) => (
                                         <article
                                             key={task.id}
                                             className="rounded-xl border border-slate-700 bg-slate-900 p-4"
