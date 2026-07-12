@@ -30,6 +30,10 @@ export default function ProjectPage({ params }: ProjectPageProps) {
     >({});
     const [savingTaskStatusId, setSavingTaskStatusId] = useState("");
     const [project, setProject] = useState<Project | null>(null);
+    const completedTasks = tasks.filter((task) => task.status === "done").length;
+    const openTasks = tasks.length - completedTasks;
+    const projectDecisions = decisions.filter((decision) => !decision.task_id).length;
+    const taskDecisions = decisions.length - projectDecisions;
 
     useEffect(() => {
         const token = localStorage.getItem("threadline.token");
@@ -303,6 +307,60 @@ export default function ProjectPage({ params }: ProjectPageProps) {
                         "Pantau pekerjaan dan alasan di balik keputusan project."}
                     </p>
                 </header>
+
+                {!isLoading && !error && (
+                  <section className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    <div className="rounded-xl border border-slate-800 bg-slate-900 p-4">
+                      <p className="text-xs font-medium tracking-wider text-slate-500">
+                        TOTAL TASKS
+                      </p>
+                      <p className="mt-2 text-2xl font-semibold">{tasks.length}</p>
+                    </div>
+
+                    <div className="rounded-xl border border-slate-800 bg-slate-900 p-4">
+                      <p className="text-xs font-medium tracking-wider text-slate-500">
+                        OPEN TASKS
+                      </p>
+                      <p className="mt-2 text-2xl font-semibold">{openTasks}</p>
+                    </div>
+
+                    <div className="rounded-xl border border-slate-800 bg-slate-900 p-4">
+                      <p className="text-xs font-medium tracking-wider text-slate-500">
+                        DONE TASKS
+                      </p>
+                      <p className="mt-2 text-2xl font-semibold">{completedTasks}</p>
+                    </div>
+
+                    <div className="rounded-xl border border-slate-800 bg-slate-900 p-4">
+                      <p className="text-xs font-medium tracking-wider text-slate-500">
+                        DECISIONS
+                      </p>
+                      <p className="mt-2 text-2xl font-semibold">{decisions.length}</p>
+                      <p className="mt-1 text-xs text-slate-500">
+                        {projectDecisions} project / {taskDecisions} task
+                      </p>
+                    </div>
+                  </section>
+                )}
+
+                {!isLoading && !error && tasks.length > 0 && (
+                  <section className="mt-4 rounded-xl border border-slate-800 bg-slate-900 p-4">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium text-slate-200">Task completion</span>
+                      <span className="text-slate-400">
+                        {Math.round((completedTasks / tasks.length) * 100)}%
+                      </span>
+                    </div>
+                    <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-800">
+                      <div
+                        className="h-full rounded-full bg-cyan-400"
+                        style={{
+                          width: `${Math.round((completedTasks / tasks.length) * 100)}%`,
+                        }}
+                      />
+                    </div>
+                  </section>
+                )}
 
                 {isLoading && (
                     <p className="mt-8 text-slate-400">Memuat project...</p>
