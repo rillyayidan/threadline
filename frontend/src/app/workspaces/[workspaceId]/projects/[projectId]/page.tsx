@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { FormEvent, startTransition, use, useEffect, useState } from "react";
 import { api, ApiError } from "@/lib/api";
-import type { Decision, Task, TaskStatus } from "@/lib/types";
+import type { Decision, Project, Task, TaskStatus } from "@/lib/types";
 
 type ProjectPageProps = {
     params: Promise<{ workspaceId: string; projectId: string }>;
@@ -29,6 +29,7 @@ export default function ProjectPage({ params }: ProjectPageProps) {
         Record<string, TaskStatus>
     >({});
     const [savingTaskStatusId, setSavingTaskStatusId] = useState("");
+    const [project, setProject] = useState<Project | null>(null);
 
     useEffect(() => {
         const token = localStorage.getItem("threadline.token");
@@ -46,17 +47,19 @@ export default function ProjectPage({ params }: ProjectPageProps) {
 
         async function loadProjectData() {
             try {
-                const [taskData, decisionData] = await Promise.all([
-                    api<Task[]>(`/projects/${projectId}/tasks`, { token: authToken }),
-                    api<Decision[]>(`/projects/${projectId}/decisions`, {
-                        token: authToken,
-                    }),
+                const [projectData, taskData, decisionData] = await Promise.all([
+                  api<Project>(`/projects/${projectId}`, { token: authToken }),
+                  api<Task[]>(`/projects/${projectId}/tasks`, { token: authToken }),
+                  api<Decision[]>(`/projects/${projectId}/decisions`, {
+                    token: authToken,
+                  }),
                 ]);
 
                 if (isActive) {
                     startTransition(() => {
-                    setTasks(taskData);
-                    setDecisions(decisionData);
+                        setProject(projectData);
+                        setTasks(taskData);
+                        setDecisions(decisionData);
                     });
                 }
             } catch (error) {
@@ -292,9 +295,12 @@ export default function ProjectPage({ params }: ProjectPageProps) {
                     <p className="text-sm font-semibold tracking-[0.2em] text-cyan-400">
                         THREADLINE
                     </p>
-                    <h1 className="mt-2 text-3xl font-semibold">Project overview</h1>
+                    <h1 className="mt-2 text-3xl font-semibold">
+                      {project?.name ?? "Project overview"}
+                    </h1>
                     <p className="mt-2 text-slate-400">
-                        Pantau pekerjaan dan alasan di balik keputusan project.
+                      {project?.description ||
+                        "Pantau pekerjaan dan alasan di balik keputusan project."}
                     </p>
                 </header>
 

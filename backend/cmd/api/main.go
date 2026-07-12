@@ -89,6 +89,11 @@ func main() {
 	)
 
 	mux.Handle(
+		"GET /projects/{projectID}",
+		auth.Middleware(cfg.JWTSecret, http.HandlerFunc(projectHandler.Get)),
+	)
+
+	mux.Handle(
 		"POST /projects/{projectID}/tasks",
 		auth.Middleware(cfg.JWTSecret, http.HandlerFunc(taskHandler.Create)),
 	)

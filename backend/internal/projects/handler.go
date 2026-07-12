@@ -142,3 +142,43 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(projects)
 }
+
+func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
+	userID, ok := auth.UserIDFromContext(r.Context())
+	if !ok {
+		http.Error(w, "missing authenticated user", http.StatusUnauthorized)
+		return
+	}
+
+	projectID := r.PathValue("projectID")
+
+	var project projectResponse
+	err := h.db.QueryRow(
+		r.Context(),
+		`
+		SELECT p.id, p.workspace_id, p.name, p.description
+		FROM projects p
+		JOIN workspaces w ON w.id = p.workspace_id
+		WHERE p.id = $1 AND w.owner_id = $2
+		`,
+		projectID,
+		userID,
+	).Scan(
+		&project.ID,
+		&project.WorkspaceID,
+		&project.Name,
+		&project.Description,
+	)
+
+	if errors.Is(err, pgx.ErrNoRows) {
+		http.Error(w, "project not found", http.StatusNotFound)
+		return
+	}
+	if err != nil {
+		http.Error(w, "failed to get project", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(project)
+}
