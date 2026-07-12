@@ -9,6 +9,8 @@ type ProjectPageProps = {
     params: Promise<{ workspaceId: string; projectId: string }>;
 };
 
+type TaskStatusFilter = "all" | TaskStatus;
+
 export default function ProjectPage({ params }: ProjectPageProps) {
     const { workspaceId, projectId } = use(params);
     const [tasks, setTasks] = useState<Task[]>([]);
@@ -29,11 +31,17 @@ export default function ProjectPage({ params }: ProjectPageProps) {
         Record<string, TaskStatus>
     >({});
     const [savingTaskStatusId, setSavingTaskStatusId] = useState("");
+    const [taskStatusFilter, setTaskStatusFilter] =
+        useState<TaskStatusFilter>("all");
     const [project, setProject] = useState<Project | null>(null);
     const completedTasks = tasks.filter((task) => task.status === "done").length;
     const openTasks = tasks.length - completedTasks;
     const projectDecisions = decisions.filter((decision) => !decision.task_id).length;
     const taskDecisions = decisions.length - projectDecisions;
+    const filteredTasks =
+        taskStatusFilter === "all"
+            ? tasks
+            : tasks.filter((task) => task.status === taskStatusFilter);
 
     useEffect(() => {
         const token = localStorage.getItem("threadline.token");
@@ -378,9 +386,36 @@ export default function ProjectPage({ params }: ProjectPageProps) {
                 {!isLoading && !error && (
                     <div className="mt-8 grid gap-8 lg:grid-cols-2">
                         <section>
-                            <div className="flex items-center justify-between">
-                                <h2 className="text-xl font-semibold">Tasks</h2>
-                                <span className="text-sm text-slate-400">{tasks.length}</span>
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                    <h2 className="text-xl font-semibold">Tasks</h2>
+                                    <p className="text-sm text-slate-400">
+                                        {filteredTasks.length} shown / {tasks.length} total
+                                    </p>
+                                </div>
+
+                                <div className="flex rounded-lg border border-slate-700 bg-slate-900 p-1 text-xs">
+                                    {(["all", "todo", "in_progress", "done"] as TaskStatusFilter[]).map(
+                                        (status) => (
+                                            <button
+                                                key={status}
+                                                type="button"
+                                                onClick={() => setTaskStatusFilter(status)}
+                                                className={`rounded-md px-3 py-1.5 font-medium transition ${
+                                                    taskStatusFilter === status
+                                                        ? "bg-cyan-400 text-slate-950"
+                                                        : "text-slate-400 hover:text-white"
+                                                }`}
+                                            >
+                                                {status === "in_progress"
+                                                    ? "In progress"
+                                                    : status === "all"
+                                                      ? "All"
+                                                      : status}
+                                            </button>
+                                        ),
+                                    )}
+                                </div>
                             </div>
 
                             <form
@@ -438,9 +473,13 @@ export default function ProjectPage({ params }: ProjectPageProps) {
                                 <div className="mt-4 rounded-xl border border-dashed border-slate-700 bg-slate-900/50 p-5 text-sm text-slate-300">
                                     Belum ada task.
                                 </div>
+                            ) : filteredTasks.length === 0 ? (
+                                <div className="mt-4 rounded-xl border border-dashed border-slate-700 bg-slate-900/50 p-5 text-sm text-slate-300">
+                                    Tidak ada task untuk filter ini.
+                                </div>
                             ) : (
                                 <div className="mt-4 space-y-3">
-                                    {tasks.map((task) => (
+                                    {filteredTasks.map((task) => (
                                         <article
                                             key={task.id}
                                             className="rounded-xl border border-slate-700 bg-slate-900 p-4"
