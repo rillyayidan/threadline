@@ -10,6 +10,7 @@ type ProjectPageProps = {
 };
 
 type TaskStatusFilter = "all" | TaskStatus;
+type DecisionScopeFilter = "all" | "project" | "task";
 
 export default function ProjectPage({ params }: ProjectPageProps) {
     const { workspaceId, projectId } = use(params);
@@ -33,6 +34,8 @@ export default function ProjectPage({ params }: ProjectPageProps) {
     const [savingTaskStatusId, setSavingTaskStatusId] = useState("");
     const [taskStatusFilter, setTaskStatusFilter] =
         useState<TaskStatusFilter>("all");
+    const [decisionScopeFilter, setDecisionScopeFilter] =
+        useState<DecisionScopeFilter>("all");
     const [project, setProject] = useState<Project | null>(null);
     const completedTasks = tasks.filter((task) => task.status === "done").length;
     const openTasks = tasks.length - completedTasks;
@@ -42,6 +45,14 @@ export default function ProjectPage({ params }: ProjectPageProps) {
         taskStatusFilter === "all"
             ? tasks
             : tasks.filter((task) => task.status === taskStatusFilter);
+    const filteredDecisions =
+        decisionScopeFilter === "all"
+            ? decisions
+            : decisions.filter((decision) =>
+                  decisionScopeFilter === "project"
+                      ? !decision.task_id
+                      : Boolean(decision.task_id),
+              );
 
     useEffect(() => {
         const token = localStorage.getItem("threadline.token");
@@ -537,11 +548,36 @@ export default function ProjectPage({ params }: ProjectPageProps) {
                         </section>
 
                         <section>
-                            <div className="flex items-center justify-between">
-                                <h2 className="text-xl font-semibold">Decision Log</h2>
-                                <span className="text-sm text-slate-400">
-                                    {decisions.length}
-                                </span>
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                    <h2 className="text-xl font-semibold">Decision Log</h2>
+                                    <p className="text-sm text-slate-400">
+                                        {filteredDecisions.length} shown / {decisions.length} total
+                                    </p>
+                                </div>
+
+                                <div className="flex rounded-lg border border-slate-700 bg-slate-900 p-1 text-xs">
+                                    {(["all", "project", "task"] as DecisionScopeFilter[]).map(
+                                        (scope) => (
+                                            <button
+                                                key={scope}
+                                                type="button"
+                                                onClick={() => setDecisionScopeFilter(scope)}
+                                                className={`rounded-md px-3 py-1.5 font-medium transition ${
+                                                    decisionScopeFilter === scope
+                                                        ? "bg-cyan-400 text-slate-950"
+                                                        : "text-slate-400 hover:text-white"
+                                                }`}
+                                            >
+                                                {scope === "all"
+                                                    ? "All"
+                                                    : scope === "project"
+                                                      ? "Project"
+                                                      : "Task"}
+                                            </button>
+                                        ),
+                                    )}
+                                </div>
                             </div>
 
                             <form
@@ -599,9 +635,13 @@ export default function ProjectPage({ params }: ProjectPageProps) {
                                 <div className="mt-4 rounded-xl border border-dashed border-slate-700 bg-slate-900/50 p-5 text-sm text-slate-300">
                                     Belum ada keputusan yang dicatat.
                                 </div>
+                            ) : filteredDecisions.length === 0 ? (
+                                <div className="mt-4 rounded-xl border border-dashed border-slate-700 bg-slate-900/50 p-5 text-sm text-slate-300">
+                                    Tidak ada decision untuk filter ini.
+                                </div>
                             ) : (
                                 <div className="mt-4 space-y-3">
-                                    {decisions.map((decision) => (
+                                    {filteredDecisions.map((decision) => (
                                         <article
                                             key={decision.id}
                                             className="rounded-xl border border-slate-700 bg-slate-900 p-4"
