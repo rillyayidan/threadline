@@ -37,6 +37,7 @@ export default function ProjectPage({ params }: ProjectPageProps) {
     const [taskSearchQuery, setTaskSearchQuery] = useState("");
     const [decisionScopeFilter, setDecisionScopeFilter] =
         useState<DecisionScopeFilter>("all");
+    const [decisionSearchQuery, setDecisionSearchQuery] = useState("");
     const [project, setProject] = useState<Project | null>(null);
     const completedTasks = tasks.filter((task) => task.status === "done").length;
     const openTasks = tasks.length - completedTasks;
@@ -66,6 +67,19 @@ export default function ProjectPage({ params }: ProjectPageProps) {
                       ? !decision.task_id
                       : Boolean(decision.task_id),
               );
+    const visibleDecisions = filteredDecisions.filter((decision) => {
+        const query = decisionSearchQuery.trim().toLowerCase();
+
+        if (!query) {
+            return true;
+        }
+
+        return (
+            decision.title.toLowerCase().includes(query) ||
+            decision.context.toLowerCase().includes(query) ||
+            decision.outcome.toLowerCase().includes(query)
+        );
+    });
 
     useEffect(() => {
         const token = localStorage.getItem("threadline.token");
@@ -573,7 +587,7 @@ export default function ProjectPage({ params }: ProjectPageProps) {
                                 <div>
                                     <h2 className="text-xl font-semibold">Decision Log</h2>
                                     <p className="text-sm text-slate-400">
-                                        {filteredDecisions.length} shown / {decisions.length} total
+                                        {visibleDecisions.length} shown / {decisions.length} total
                                     </p>
                                 </div>
 
@@ -652,17 +666,25 @@ export default function ProjectPage({ params }: ProjectPageProps) {
                               </div>
                             </form>
 
+                            <input
+                                type="search"
+                                value={decisionSearchQuery}
+                                onChange={(event) => setDecisionSearchQuery(event.target.value)}
+                                placeholder="Search decisions"
+                                className="mt-4 w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none placeholder:text-slate-500 focus:border-cyan-400"
+                            />
+
                             {decisions.length === 0 ? (
                                 <div className="mt-4 rounded-xl border border-dashed border-slate-700 bg-slate-900/50 p-5 text-sm text-slate-300">
                                     Belum ada keputusan yang dicatat.
                                 </div>
-                            ) : filteredDecisions.length === 0 ? (
+                            ) : visibleDecisions.length === 0 ? (
                                 <div className="mt-4 rounded-xl border border-dashed border-slate-700 bg-slate-900/50 p-5 text-sm text-slate-300">
-                                    Tidak ada decision untuk filter ini.
+                                    Tidak ada decision yang cocok.
                                 </div>
                             ) : (
                                 <div className="mt-4 space-y-3">
-                                    {filteredDecisions.map((decision) => (
+                                    {visibleDecisions.map((decision) => (
                                         <article
                                             key={decision.id}
                                             className="rounded-xl border border-slate-700 bg-slate-900 p-4"
