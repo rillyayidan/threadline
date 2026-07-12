@@ -208,6 +208,14 @@ export default function ProjectPage({ params }: ProjectPageProps) {
       return pendingTaskStatuses[task.id] ?? task.status;
     }
 
+    function getTaskTitle(taskId: string | null) {
+      if (!taskId) {
+        return "";
+      }
+
+      return tasks.find((task) => task.id === taskId)?.title ?? "";
+    }
+
     async function handleUpdateTaskStatus(task: Task) {
       const token = localStorage.getItem("threadline.token");
       const status = getTaskStatusValue(task);
@@ -387,6 +395,17 @@ export default function ProjectPage({ params }: ProjectPageProps) {
                                                     {task.description}
                                                 </p>
                                             )}
+                                            <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                                              <span className="rounded-full bg-slate-800 px-2 py-1 text-slate-300">
+                                                Priority: {task.priority}
+                                              </span>
+
+                                              {task.due_date && (
+                                                <span className="rounded-full bg-slate-800 px-2 py-1 text-slate-300">
+                                                  Due: {task.due_date}
+                                                </span>
+                                              )}
+                                            </div>
                                         </article>
                                     ))}
                                 </div>
@@ -464,10 +483,13 @@ export default function ProjectPage({ params }: ProjectPageProps) {
                                             className="rounded-xl border border-slate-700 bg-slate-900 p-4"
                                         >
                                             <p className="text-xs font-medium tracking-wider text-cyan-400">
-                                                {decision.task_id
-                                                    ? "TASK DECISION"
-                                                    : "PROJECT DECISION"}
+                                                {decision.task_id ? "TASK DECISION" : "PROJECT DECISION"}
                                             </p>
+                                            {decision.task_id && getTaskTitle(decision.task_id) && (
+                                                <p className="mt-2 text-xs text-slate-400">
+                                                    Linked task: {getTaskTitle(decision.task_id)}
+                                                </p>
+                                            )}
                                             <h3 className="mt-2 font-semibold">{decision.title}</h3>
                                             {decision.context && (
                                                 <p className="mt-2 text-sm text-slate-400">
