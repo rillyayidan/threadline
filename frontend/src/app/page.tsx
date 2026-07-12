@@ -273,7 +273,7 @@ export default function Home() {
                       Lihat project dan decision log di workspace ini.
                     </p>
                     <p className="mt-5 text-sm font-medium text-cyan-400">
-                      Buka workspace →
+                      Buka workspace {`->`}
                     </p>
                   </Link>
                 ))}
@@ -319,7 +319,7 @@ export default function Home() {
               required
               autoComplete="current-password"
               className="mt-2 w-full rounded-lg border border-slate-600 bg-slate-800 px-3 py-2.5 outline-none placeholder:text-slate-500 focus:border-cyan-400"
-              placeholder="••••••••"
+              placeholder="********"
             />
           </label>
 

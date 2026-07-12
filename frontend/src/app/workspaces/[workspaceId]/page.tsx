@@ -121,7 +121,7 @@ export default function WorkspacePage({ params }: WorkspacePageProps) {
           href="/"
           className="text-sm font-medium text-cyan-400 hover:text-cyan-300"
         >
-          ← Semua workspace
+          {`<-`} Semua workspace
         </Link>
 
         <header className="mt-8 border-b border-slate-800 pb-6">
@@ -209,7 +209,7 @@ export default function WorkspacePage({ params }: WorkspacePageProps) {
                   </p>
                 )}
                 <p className="mt-5 text-sm font-medium text-cyan-400">
-                  Buka project →
+                  Buka project {`->`}
                 </p>
               </Link>
             ))}

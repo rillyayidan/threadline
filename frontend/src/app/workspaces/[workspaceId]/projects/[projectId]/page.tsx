@@ -311,7 +311,7 @@ export default function ProjectPage({ params }: ProjectPageProps) {
                     href={`/workspaces/${workspaceId}`}
                     className="text-sm font-medium text-cyan-400 hover:text-cyan-300"
                 >
-                    ← Semua project
+                    {`<-`} Semua project
                 </Link>
 
                 <header className="mt-8 border-b border-slate-800 pb-6">
