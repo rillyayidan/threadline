@@ -43,4 +43,5 @@ export type Decision = {
   context: string;
   outcome: string;
   created_by: string;
+  created_at: string;
 };

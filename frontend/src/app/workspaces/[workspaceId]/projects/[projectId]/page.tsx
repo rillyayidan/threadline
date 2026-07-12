@@ -216,6 +216,23 @@ export default function ProjectPage({ params }: ProjectPageProps) {
       return tasks.find((task) => task.id === taskId)?.title ?? "";
     }
 
+    function formatDecisionTime(value?: string) {
+      if (!value) {
+        return "Waktu belum tersedia";
+      }
+
+      const date = new Date(value);
+
+      if (Number.isNaN(date.getTime())) {
+        return "Waktu belum tersedia";
+      }
+
+      return new Intl.DateTimeFormat("id-ID", {
+        dateStyle: "medium",
+        timeStyle: "short",
+      }).format(date);
+    }
+
     async function handleUpdateTaskStatus(task: Task) {
       const token = localStorage.getItem("threadline.token");
       const status = getTaskStatusValue(task);
@@ -260,6 +277,7 @@ export default function ProjectPage({ params }: ProjectPageProps) {
         setSavingTaskStatusId("");
       }
     }
+
     return (
         <main className="min-h-screen bg-slate-950 px-6 py-8 text-white">
             <div className="mx-auto max-w-5xl">
@@ -484,6 +502,9 @@ export default function ProjectPage({ params }: ProjectPageProps) {
                                         >
                                             <p className="text-xs font-medium tracking-wider text-cyan-400">
                                                 {decision.task_id ? "TASK DECISION" : "PROJECT DECISION"}
+                                            </p>
+                                            <p className="mt-1 text-xs text-slate-500">
+                                              {formatDecisionTime(decision.created_at)}
                                             </p>
                                             {decision.task_id && getTaskTitle(decision.task_id) && (
                                                 <p className="mt-2 text-xs text-slate-400">

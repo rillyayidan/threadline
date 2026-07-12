@@ -34,6 +34,7 @@ type decisionResponse struct {
 	Context   string  `json:"context"`
 	Outcome   string  `json:"outcome"`
 	CreatedBy string  `json:"created_by"`
+	CreatedAt string `json:"created_at"`
 }
 
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
@@ -82,7 +83,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		  )
 		RETURNING
 			id, project_id, task_id, title,
-			context, outcome, created_by
+			context, outcome, created_by, created_at::text
 		`,
 		req.TaskID,
 		req.Title,
@@ -98,6 +99,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		&decision.Context,
 		&decision.Outcome,
 		&decision.CreatedBy,
+		&decision.CreatedAt,
 	)
 
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -128,7 +130,7 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 		`
 		SELECT
 			d.id, d.project_id, d.task_id, d.title,
-			d.context, d.outcome, d.created_by
+			d.context, d.outcome, d.created_by, d.created_at::text
 		FROM decisions d
 		JOIN projects p ON p.id = d.project_id
 		JOIN workspaces w ON w.id = p.workspace_id
@@ -156,6 +158,7 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 			&decision.Context,
 			&decision.Outcome,
 			&decision.CreatedBy,
+			&decision.CreatedAt,
 		); err != nil {
 			http.Error(w, "failed to read decision", http.StatusInternalServerError)
 			return
