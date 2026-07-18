@@ -16,11 +16,17 @@ import (
 	"github.com/rillyayidan/threadline/backend/internal/workspaces"
 )
 
-func corsMiddleware(next http.Handler) http.Handler {
+func corsMiddleware(allowedOrigin string, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
+		origin := r.Header.Get("Origin")
+		if origin != "" {
+			w.Header().Add("Vary", "Origin")
+		}
+		if origin == allowedOrigin {
+			w.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
+		}
 
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusNoContent)
@@ -127,7 +133,7 @@ func main() {
 	addr := ":" + cfg.APIPort
 	log.Println("Threadline API running on http://localhost" + addr)
 
-	err = http.ListenAndServe(addr, corsMiddleware(mux))
+	err = http.ListenAndServe(addr, corsMiddleware(cfg.CORSOrigin, mux))
 	if err != nil {
 		log.Fatal(err)
 	}
