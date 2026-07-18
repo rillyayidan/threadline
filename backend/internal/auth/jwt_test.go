@@ -63,3 +63,23 @@ func TestParseTokenRejectsExpiredToken(t *testing.T) {
 		t.Fatal("ParseToken() error = nil, want expiration error")
 	}
 }
+
+func TestParseTokenRejectsUnexpectedSigningMethod(t *testing.T) {
+	t.Parallel()
+
+	claims := Claims{
+		UserID: "user-123",
+		Email:  "user@example.com",
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)),
+		},
+	}
+	tokenString, err := jwt.NewWithClaims(jwt.SigningMethodHS384, claims).SignedString([]byte("test-secret"))
+	if err != nil {
+		t.Fatalf("SignedString() error = %v", err)
+	}
+
+	if _, err := ParseToken("test-secret", tokenString); err == nil {
+		t.Fatal("ParseToken() error = nil, want signing method error")
+	}
+}
