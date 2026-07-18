@@ -6,6 +6,7 @@ func TestLoadUsesDevelopmentDefaults(t *testing.T) {
 	t.Setenv("DATABASE_URL", "")
 	t.Setenv("API_PORT", "")
 	t.Setenv("JWT_SECRET", "")
+	t.Setenv("CORS_ORIGIN", "")
 
 	cfg := Load()
 
@@ -18,12 +19,16 @@ func TestLoadUsesDevelopmentDefaults(t *testing.T) {
 	if cfg.JWTSecret != "dev-secret" {
 		t.Errorf("JWTSecret = %q, want %q", cfg.JWTSecret, "dev-secret")
 	}
+	if cfg.CORSOrigin != "http://localhost:3000" {
+		t.Errorf("CORSOrigin = %q, want development default", cfg.CORSOrigin)
+	}
 }
 
 func TestLoadUsesEnvironmentOverrides(t *testing.T) {
 	t.Setenv("DATABASE_URL", "postgres://example.test/threadline")
 	t.Setenv("API_PORT", "9090")
 	t.Setenv("JWT_SECRET", "production-secret")
+	t.Setenv("CORS_ORIGIN", "https://threadline.example.com")
 
 	cfg := Load()
 
@@ -35,5 +40,8 @@ func TestLoadUsesEnvironmentOverrides(t *testing.T) {
 	}
 	if cfg.JWTSecret != "production-secret" {
 		t.Errorf("JWTSecret = %q, want environment value", cfg.JWTSecret)
+	}
+	if cfg.CORSOrigin != "https://threadline.example.com" {
+		t.Errorf("CORSOrigin = %q, want environment value", cfg.CORSOrigin)
 	}
 }

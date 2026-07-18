@@ -6,6 +6,7 @@ type Config struct {
 	DatabaseURL string
 	APIPort     string
 	JWTSecret   string
+	CORSOrigin  string
 }
 
 func Load() Config {
@@ -24,9 +25,15 @@ func Load() Config {
 		jwtSecret = "dev-secret"
 	}
 
+	corsOrigin := os.Getenv("CORS_ORIGIN")
+	if corsOrigin == "" {
+		corsOrigin = "http://localhost:3000"
+	}
+
 	return Config{
 		DatabaseURL: databaseURL,
 		APIPort:     apiPort,
 		JWTSecret:   jwtSecret,
+		CORSOrigin:  corsOrigin,
 	}
 }
