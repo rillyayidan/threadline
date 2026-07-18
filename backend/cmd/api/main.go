@@ -3,8 +3,12 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/rillyayidan/threadline/backend/internal/auth"
@@ -67,7 +71,8 @@ func newServer(addr string, corsOrigin string, handler http.Handler) *http.Serve
 }
 
 func main() {
-	ctx := context.Background()
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 
 	cfg := config.Load()
 
@@ -154,8 +159,19 @@ func main() {
 	log.Println("Threadline API running on http://localhost" + addr)
 
 	server := newServer(addr, cfg.CORSOrigin, mux)
+	go func() {
+		<-ctx.Done()
+
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		if err := server.Shutdown(shutdownCtx); err != nil {
+			log.Printf("failed to gracefully shut down API server: %v", err)
+		}
+	}()
+
 	err = server.ListenAndServe()
-	if err != nil {
+	if err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Fatal(err)
 	}
 }
