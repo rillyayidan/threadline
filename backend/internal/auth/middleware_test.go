@@ -71,3 +71,30 @@ func TestMiddlewareAddsUserIDToContext(t *testing.T) {
 		t.Errorf("status = %d, want %d", recorder.Code, http.StatusNoContent)
 	}
 }
+
+func TestMiddlewareAcceptsCaseInsensitiveBearerScheme(t *testing.T) {
+	t.Parallel()
+
+	tokenString, err := GenerateToken("test-secret", "user-123", "user@example.com")
+	if err != nil {
+		t.Fatalf("GenerateToken() error = %v", err)
+	}
+
+	for _, header := range []string{
+		"bearer " + tokenString,
+		"BEARER   " + tokenString,
+	} {
+		recorder := httptest.NewRecorder()
+		request := httptest.NewRequest(http.MethodGet, "/protected", nil)
+		request.Header.Set("Authorization", header)
+		handler := Middleware("test-secret", http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusNoContent)
+		}))
+
+		handler.ServeHTTP(recorder, request)
+
+		if recorder.Code != http.StatusNoContent {
+			t.Errorf("header %q: status = %d, want %d", header, recorder.Code, http.StatusNoContent)
+		}
+	}
+}

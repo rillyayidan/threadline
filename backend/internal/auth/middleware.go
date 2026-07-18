@@ -18,11 +18,12 @@ func Middleware(secret string, next http.Handler) http.Handler {
 			return
 		}
 
-		tokenString, ok := strings.CutPrefix(authHeader, "Bearer ")
-		if !ok || tokenString == "" {
+		parts := strings.Fields(authHeader)
+		if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") {
 			http.Error(w, "invalid authorization header", http.StatusUnauthorized)
 			return
 		}
+		tokenString := parts[1]
 
 		claims, err := ParseToken(secret, tokenString)
 		if err != nil {
