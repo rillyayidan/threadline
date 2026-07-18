@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/rillyayidan/threadline/backend/internal/auth"
 	"github.com/rillyayidan/threadline/backend/internal/config"
@@ -52,6 +53,17 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
+}
+
+func newServer(addr string, corsOrigin string, handler http.Handler) *http.Server {
+	return &http.Server{
+		Addr:              addr,
+		Handler:           corsMiddleware(corsOrigin, handler),
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       60 * time.Second,
+	}
 }
 
 func main() {
@@ -141,7 +153,8 @@ func main() {
 	addr := ":" + cfg.APIPort
 	log.Println("Threadline API running on http://localhost" + addr)
 
-	err = http.ListenAndServe(addr, corsMiddleware(cfg.CORSOrigin, mux))
+	server := newServer(addr, cfg.CORSOrigin, mux)
+	err = server.ListenAndServe()
 	if err != nil {
 		log.Fatal(err)
 	}

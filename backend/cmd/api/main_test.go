@@ -5,7 +5,33 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 )
+
+func TestNewServerConfiguresTimeouts(t *testing.T) {
+	t.Parallel()
+
+	server := newServer(":9090", "https://threadline.example.com", http.NewServeMux())
+
+	if server.Addr != ":9090" {
+		t.Errorf("Addr = %q, want %q", server.Addr, ":9090")
+	}
+	if server.Handler == nil {
+		t.Fatal("Handler = nil, want CORS-wrapped handler")
+	}
+	if server.ReadHeaderTimeout != 5*time.Second {
+		t.Errorf("ReadHeaderTimeout = %s, want %s", server.ReadHeaderTimeout, 5*time.Second)
+	}
+	if server.ReadTimeout != 15*time.Second {
+		t.Errorf("ReadTimeout = %s, want %s", server.ReadTimeout, 15*time.Second)
+	}
+	if server.WriteTimeout != 30*time.Second {
+		t.Errorf("WriteTimeout = %s, want %s", server.WriteTimeout, 30*time.Second)
+	}
+	if server.IdleTimeout != 60*time.Second {
+		t.Errorf("IdleTimeout = %s, want %s", server.IdleTimeout, 60*time.Second)
+	}
+}
 
 func TestHealthHandler(t *testing.T) {
 	t.Parallel()
