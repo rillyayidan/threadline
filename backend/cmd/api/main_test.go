@@ -1,10 +1,51 @@
 package main
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 )
+
+func TestHealthHandler(t *testing.T) {
+	t.Parallel()
+
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/health", nil)
+
+	healthHandler(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Errorf("status = %d, want %d", recorder.Code, http.StatusOK)
+	}
+	if got := recorder.Header().Get("Content-Type"); got != "application/json" {
+		t.Errorf("Content-Type = %q, want %q", got, "application/json")
+	}
+
+	var response map[string]string
+	if err := json.NewDecoder(recorder.Body).Decode(&response); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if response["status"] != "ok" || response["service"] != "threadline-api" {
+		t.Errorf("response = %#v, want healthy Threadline API", response)
+	}
+}
+
+func TestHealthHandlerRejectsOtherMethods(t *testing.T) {
+	t.Parallel()
+
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodPost, "/health", nil)
+
+	healthHandler(recorder, request)
+
+	if recorder.Code != http.StatusMethodNotAllowed {
+		t.Errorf("status = %d, want %d", recorder.Code, http.StatusMethodNotAllowed)
+	}
+	if got := recorder.Header().Get("Allow"); got != http.MethodGet {
+		t.Errorf("Allow = %q, want %q", got, http.MethodGet)
+	}
+}
 
 func TestCORSMiddlewareAllowsConfiguredOrigin(t *testing.T) {
 	t.Parallel()
